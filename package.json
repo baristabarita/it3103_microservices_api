@@ -1,14 +1,14 @@
 {
-  "name": "product_service",
+  "name": "it3103_exercise3",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Created by:\r   - Shane Louis Barita\r   - Lyan Ethan Jover",
+  "main": "customer_service.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "axios": "^1.7.7",
     "express": "^4.21.0"
