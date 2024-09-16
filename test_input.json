@@ -1,0 +1,33 @@
+{
+    "customers": {
+        "0": {
+            "name": "John",
+            "email": "john@appleseed.com"
+        },
+        "1": {
+            "name": "IShowSpeed",
+            "email": "ishowspeed@appleseed.com"
+        }
+    },
+
+    "product": {
+        "0": {
+            "name": "Product Name",
+            "price": 150,
+            "description": "Never Give Up!"
+        },
+        "1": {
+            "name": "Product Name Too",
+            "price": 200,
+            "description": "Please do it!"
+        }
+    },
+
+    "orders": {
+        "0": {
+            "customerId": 1,
+            "productId": 1
+        }
+    }
+
+}
