@@ -2,7 +2,7 @@
 
 const express = require('express');
 const app = express();
-const port = 3002;
+const port = 3001;
 
 app.use(express.json());
 
@@ -11,55 +11,78 @@ let customerIdCounter = 1;
 
 //Add New Customer
 app.post('/customers', (req, res) => {
+
     const newCustomer = req.body;
-    newCustomer.id = customerIdCounter+1;
-    customers.push(newCustomer);
-    res.status(201).json(newCustomer);
+    newCustomer.id = customerIdCounter++;
+    
+    try {
+        customers.push(newCustomer);
+        res.status(201).json(newCustomer);
+    } catch (error) {
+        res.status(500).json({error: "Error adding new customer"});
+    }
+
+    console.log(customers);
+
 });
  
 //Get Customer Detail
 app.get('/customers/:customerID', (req, res) => {
-    const customerID = parseInt(req.params.customerID, 10);
-    const customer = customers.find(c => c.id === customerID);
+    const customerID = parseInt(req.params.customerID);
+    const customer = customers.find((customer) => customer.id === customerID);
 
-    if (!customer) {
-        return res.status(404).json({
-            message: 'Customer not found'
-        });
+    try {
+        if (!customer) {
+            return res.status(404).json({message: 'Customer not found'});
+        } else {
+            res.json(customer);
+        }
+    } catch (error) {
+        res.status(500).json({error: "There was an error in finding the user"});
     }
 
-    res.json(customer);
 });
  
 //Update Customer Information
-app.put('/customers/:customersID', (req, res) => {
-    const customerID = parseInt(req.params.customerID, 10);
-    const updatedCustomer = req.body;
-    const customerIndex = customers.findIndex(c => c.id === customerID);
+app.put('/customers/:customerID', (req, res) => {
+    const customerID = parseInt(req.params.customerID);
+    const customer = customers.find((customer) => customer.id === customerID);
 
-    if (customerIndex === -1) {
-        return res.status(404).json({
-            message: 'Customer not found'
-        });
+    try {
+        if (!customer) {
+            return res.status(404).json({ message: 'Customer not found'});
+        } else {
+            Object.assign(customer, req.body);
+            res.json(customer);
+        }
+    } catch (error) {
+        res.status(500).json({error: "Error adding new customer"});
     }
 
-    customers[customerIndex] = updatedCustomer;
-    res.json(updatedCustomer);
+    console.log(customers);
+ 
+
 });
  
 //Delete Customer Information
-app.delete('/customers/:customersID', (req, res) => {
+app.delete('/customers/:customerID', (req, res) => {
     const customerID = parseInt(req.params.customerID, 10);
-    const customerIndex = customers.findIndex(c => c.id === customerID);
+    const ndex = customers.findIndex((customer) => customer.id === customerID);
 
-    if (customerIndex === -1) {
-        return res.status(404).json({
-            message: 'Customer not found'
-        });
+    try {
+        if (ndex === -1) {
+            return res.status(404).json({ message: 'Customer not found'});
+        } else {
+            customers.splice(ndex, 1);
+            res.json({
+                message: `Customer with ID ${customerID} has been deleted`
+            });
+        }
+    } catch (error) {
+        res.status(500).json({error: "Error adding new customer"});
     }
 
-    customers.splice(customerIndex, 1);
-    res.status(204).end();
+
 });
  
 //Start Server
