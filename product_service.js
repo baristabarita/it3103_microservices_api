@@ -2,7 +2,7 @@
 
 const express = require('express');
 const app = express();
-const port = 3001;
+const port = 3002;
 
 app.use(express.json());
 
@@ -21,9 +21,11 @@ app.post('/products', (req, res) =>{
             productId: productId,
             product: products[productId]
         });
+        console.log(products);
     }catch(error){
         res.status(500).json({error: 'Error adding product' });
     }
+
 });
 
 //Get product by ID.
@@ -60,6 +62,7 @@ app.put('/products/:productId', (req, res) => {
         res.status(500).json({json: 'Server Error fetching selected Product'})
     }
 
+    console.log(products);
 });
 
 //Deletes a product.
@@ -81,5 +84,5 @@ app.delete('/products/:productId', (req, res) => {
 });
 
 app.listen(port, () => 
-    console.log('Product Service running on Port 3001')
+    console.log(`Product Service running on http://localhost:${port}`)
 );
