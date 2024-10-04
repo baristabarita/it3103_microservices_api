@@ -1,4 +1,4 @@
-# IT3103 Exercise 3: Designing and Building a Microservices API
+# IT3103: Designing and Building a Microservices API [TO BE UPDATED]
 
 Created by:
   - Shane Louis Barita
