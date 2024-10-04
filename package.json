@@ -1,5 +1,5 @@
 {
-  "name": "it3103_exercise3",
+  "name": "it3103_microservices_api",
   "version": "1.0.0",
   "description": "Created by:\r   - Shane Louis Barita\r   - Lyan Ethan Jover",
   "main": "customer_service.js",
@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.7",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0"
   }
 }
