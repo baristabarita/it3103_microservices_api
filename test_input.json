@@ -1,5 +1,5 @@
 {
-    "customers": {
+    "users": {
         "0": {
             "name": "John",
             "email": "john@appleseed.com"
@@ -25,7 +25,7 @@
 
     "orders": {
         "0": {
-            "customerId": 1,
+            "userId": 1,
             "productId": 1
         }
     }

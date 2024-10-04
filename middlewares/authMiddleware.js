@@ -1,0 +1,1 @@
+//authMiddleWare.js
