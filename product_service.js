@@ -4,6 +4,7 @@ const express = require('express');
 const app = express();
 const authenticateToken = require('./middlewares/authMiddleware');
 const port = 3001;
+const roleAccessMiddleware = require('./middlewares/roleAccessMiddleware');
 
 app.use(express.json());
 app.use(authenticateToken);
@@ -11,8 +12,8 @@ app.use(authenticateToken);
 let products = {};
 let productIdCounter = 1;
 
-//Adds a new product.
-app.post('/products', (req, res) =>{
+//Adds a new product - Admins only.
+app.post('/products', roleAccessMiddleware(['admin']), async (req, res) =>{
     const productData = req.body;
     const productId = productIdCounter++;
     //Checks if products exists in Product service
@@ -30,8 +31,8 @@ app.post('/products', (req, res) =>{
 
 });
 
-//Get product by ID.
-app.get('/products/:productId', (req, res) => {
+//Get product by ID - Open to all.
+app.get('/products/:productId', roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
     const productId = req.params.productId;
     const product = products[productId];
 
@@ -47,8 +48,34 @@ app.get('/products/:productId', (req, res) => {
     }
 });
 
-//Updates an existing product.
-app.put('/products/:productId', (req, res) => {
+//Get and view all available products - Open to all.
+
+app.get('/products/all', roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+    //Fetch all products
+    const allProducts = Object.values(products);
+    
+    try{
+        if(allProducts.length === 0){
+            res.status(404).json({
+                message: 'No products found'
+            });
+        } else {
+            res.status(200).json({
+                message: 'Products Retrieved Successfully',
+                products: allProducts
+            });
+        }
+
+    }catch(error){
+        res.status(500).json({
+            error: 'Internal Server Error'
+        });
+    }
+})
+
+//Updates an existing product - Admin only.
+
+app.put('/products/:productId', roleAccessMiddleware(['admin']), async (req, res) => {
     const productId = req.params.productId;
     const product = products[productId];
 
@@ -67,9 +94,9 @@ app.put('/products/:productId', (req, res) => {
     console.log(products);
 });
 
-//Deletes a product.
+//Deletes a product - Admin only.
 
-app.delete('/products/:productId', (req, res) => {
+app.delete('/products/:productId', roleAccessMiddleware(['admin']), async (req, res) => {
     const productId = req.params.productId;
 
     // Check if the product exists and delete it

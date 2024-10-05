@@ -5,6 +5,7 @@ const axios = require('axios');
 const authenticateToken = require('./middlewares/authMiddleware');
 const app = express();
 const port = 3003;
+const roleAccessMiddleware = require('./middlewares/roleAccessMiddleware')
 
 app.use(express.json());
 app.use(authenticateToken);
@@ -12,8 +13,8 @@ app.use(authenticateToken);
 let orders = {};
 let orderIdCounter = 1;
 
-// Create a new order
-app.post('/orders', async (req, res) => {
+// Create a new order - Customer only
+app.post('/orders', roleAccessMiddleware(['customer']), async (req, res) => {
     const { userId, productId } = req.body;
     console.log(req.body);
 
@@ -54,8 +55,8 @@ app.post('/orders', async (req, res) => {
     }
 });
 
-// Get Order Details
-app.get('/orders/:orderId', (req, res) => {
+// Get Order Details by ID - Admin only
+app.get('/orders/:orderId', roleAccessMiddleware(['admin']), async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     try {
         if (!orders[orderId]) {
@@ -76,8 +77,36 @@ app.get('/orders/:orderId', (req, res) => {
     }
 });
 
-// Update Order Details
-app.put('/orders/:orderId', async (req, res) => {
+// Get ALL Orders - Admin only.
+app.get('/orders/all', roleAccessMiddleware(['admin']), async (req, res) =>{
+    const allOrders = Object.values(orders);
+
+    try{
+        if(allOrders.length === 0){
+            return res.status(404).json({
+                error: 'No orders found'
+            });
+        } else {
+            const detailedOrders = allOrders.map (order => ({
+                ...order,
+                userDetails: order.userDetails,
+                productDetails: order.productDetails
+
+            }));
+            
+            res.json({
+                message: 'All orders retrieved successfully',
+                orders: detailedOrders
+            })
+
+        }
+    } catch(error){
+        res.status(500).json({error: 'Error retrieving orders'});
+    }
+});
+
+// Update Order Details -  Open to all.
+app.put('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     try {
         if (!orders[orderId]) {
@@ -123,8 +152,8 @@ app.put('/orders/:orderId', async (req, res) => {
     }
 });
 
-//Delete an Order
-app.delete('/orders/:orderId', (req, res) => {
+//Delete an Order - Open to all.
+app.delete('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     
     try {
@@ -142,3 +171,5 @@ app.delete('/orders/:orderId', (req, res) => {
 app.listen(port, () => 
     console.log(`Order Service running on Port http://localhost:${port}`)
 );
+
+
