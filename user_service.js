@@ -1,6 +1,9 @@
 //user Service index file
 
 const express = require('express');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
 const app = express();
 const port = 3002;
 
@@ -9,20 +12,68 @@ app.use(express.json());
 let users = [];
 let userIdCounter = 1;
 
-//Add New user
-app.post('/users', (req, res) => {
+function generateToken(user) {
+    const payload = {
+        id: user.id,
+        user: user.name,
+        email: user.email,
+        role: user.role,
+        pass: user.pass
+    }
+    console.log(payload);
+    return jwt.sign(payload, 'secret', { expiresIn: '1h' });
+}
 
-    const newuser = req.body;
-    newuser.id = userIdCounter++;
+//Add New user, Also known as Signups
+app.post('/signup', (req, res) => {
+
+    const { name, email, role, pass } = req.body;
+    console.log(`Name of the user: ${name}`);
+    console.log(`Email of the user: ${email}`);
+    console.log(`Password of the user: ${pass}`);
+
+    const newUser = {
+        id: userIdCounter++,
+        name,
+        email,
+        role,
+        pass
+    };
     
     try {
-        users.push(newuser);
-        res.status(201).json(newuser);
+        users.push(newUser);
+        const token = generateToken(newUser);
+        res.status(201).json(newUser);
     } catch (error) {
         res.status(500).json({error: "Error adding new user"});
+        console.log(error);
     }
 
-    console.log(users);
+    // console.log(users);
+
+});
+
+//Login User
+app.post('/login', (req, res) => {
+    
+    const { email, pass } = req.body;
+    const incomingUser = users.find(u => u.email === email && u.pass === pass); //find the user information
+
+    // console.log(incomingUser);
+    
+    try {
+        if (incomingUser) {
+            const token = generateToken(incomingUser);
+            res.json({ token });
+        } else {
+            res.status(401).json({
+                error: 'Invalid credentials'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({error: "There was a problem during login!"});
+    }
+
 
 });
  

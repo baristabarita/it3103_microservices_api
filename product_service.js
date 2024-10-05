@@ -2,10 +2,12 @@
 
 const express = require('express');
 const app = express();
+const authenticateToken = require('./middlewares/authMiddleware');
 const port = 3001;
 const roleAccessMiddleware = require('./middlewares/roleAccessMiddleware');
 
 app.use(express.json());
+app.use(authenticateToken);
 
 let products = {};
 let productIdCounter = 1;

@@ -1,15 +1,31 @@
 http:
   port: 8080
+
 admin:
   port: 9876
   host: localhost
+
 apiEndpoints:
   api:
     host: localhost
     paths: '/ip'
+  products:
+    host: localhost
+    paths: '/product/*'
+  users:
+    host: localhost
+    paths: '/user/*'
+
 serviceEndpoints:
   httpbin:
     url: 'https://httpbin.org'
+  productService:
+    url: 'http://localhost:3001'
+  userService:
+    url: 'http://localhost:3002'
+  orderService:
+    url: 'http://localhost:3003'
+
 policies:
   - basic-auth
   - cors
@@ -19,14 +35,37 @@ policies:
   - oauth2
   - proxy
   - rate-limit
+
 pipelines:
   default:
     apiEndpoints:
       - api
     policies:
-    # Uncomment `key-auth:` when instructed to in the Getting Started guide.
-    # - key-auth:
       - proxy:
           - action:
-              serviceEndpoint: httpbin 
+              serviceEndpoint: httpbin
+              changeOrigin: true
+  productsPipeline:
+    apiEndpoints:
+      - products
+    policies:
+      - proxy:
+          - action:
+              serviceEndpoint: productService
+              changeOrigin: true
+  usersPipeline:
+    apiEndpoints:
+      - users
+    policies:
+      - proxy:
+          - action:
+              serviceEndpoint: userService
+              changeOrigin: true
+  ordersPipeline:
+    apiEndpoints:
+      - orders
+    policies:
+      - proxy:
+          - action:
+              serviceEndpoint: orderService
               changeOrigin: true
