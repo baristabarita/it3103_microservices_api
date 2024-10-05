@@ -2,9 +2,9 @@
 
 const express = require('express');
 const axios = require('axios');
-const authenticateToken = require('./middlewares/authMiddleware');
 const app = express();
 const port = 3003;
+const authenticateToken = require('./middlewares/authMiddleware');
 const roleAccessMiddleware = require('./middlewares/roleAccessMiddleware')
 
 app.use(express.json());
