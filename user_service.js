@@ -2,6 +2,8 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
 const app = express();
 const port = 3002;
 
@@ -15,6 +17,7 @@ function generateToken(user) {
         id: user.id,
         user: user.name,
         email: user.email,
+        role: user.role,
         pass: user.pass
     }
     console.log(payload);
@@ -22,21 +25,28 @@ function generateToken(user) {
 }
 
 //Add New user, Also known as Signups
-app.post('/users', (req, res) => {
+app.post('/signup', (req, res) => {
 
-    const { name, email, pass } = req.body;
+    const { name, email, role, pass } = req.body;
     console.log(`Name of the user: ${name}`);
     console.log(`Email of the user: ${email}`);
     console.log(`Password of the user: ${pass}`);
 
-    const newuser = req.body;
-    newuser.id = userIdCounter++;
+    const newUser = {
+        id: userIdCounter++,
+        name,
+        email,
+        role,
+        pass
+    };
     
     try {
-        users.push(newuser);
-        res.status(201).json(newuser);
+        users.push(newUser);
+        const token = generateToken(newUser);
+        res.status(201).json(newUser);
     } catch (error) {
         res.status(500).json({error: "Error adding new user"});
+        console.log(error);
     }
 
     // console.log(users);
@@ -46,23 +56,24 @@ app.post('/users', (req, res) => {
 //Login User
 app.post('/login', (req, res) => {
     
-    const { id, name, email, pass } = req.body;
+    const { email, pass } = req.body;
+    const incomingUser = users.find(u => u.email === email && u.pass === pass); //find the user information
 
-    console.log(`Incoming Id: ${id}`);
-    console.log(`Incoming Name: ${name}`);
-    console.log(`Incoming Email: ${email}`);
-    console.log(`Incoming Password: ${pass}`);
-
-    const incomingUser = users.find(u => u.email === email && u.pass === pass);
+    // console.log(incomingUser);
     
-    if (incomingUser) {
-        const token = generateToken(incomingUser);
-        res.json({ token });
-    } else {
-        res.status(401).json({
-            error: 'Invalid email or password'
-        });
+    try {
+        if (incomingUser) {
+            const token = generateToken(incomingUser);
+            res.json({ token });
+        } else {
+            res.status(401).json({
+                error: 'Invalid credentials'
+            });
+        }
+    } catch (error) {
+        res.status(500).json({error: "There was a problem during login!"});
     }
+
 
 });
  
