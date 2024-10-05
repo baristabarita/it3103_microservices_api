@@ -2,10 +2,10 @@
 
 const express = require('express');
 const axios = require('axios');
-const authenticateToken = require('./middlewares/authMiddleware');
+const authenticateToken = require('../middlewares/authMiddleware');
 const app = express();
 const port = 3003;
-const roleAccessMiddleware = require('./middlewares/roleAccessMiddleware')
+const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware')
 
 app.use(express.json());
 app.use(authenticateToken);
@@ -20,7 +20,7 @@ app.post('/orders', roleAccessMiddleware(['customer']), async (req, res) => {
 
     try {
         // Checks and verifies if the user exists
-        const userResponse = await axios.get(`http://localhost:3002/users/${userId}`);
+        const userResponse = await axios.get(`http://localhost:3002/user/${userId}`);
         if (userResponse.status !== 200) {
             return res.status(404).json({ error: 'user not found' });
         }
@@ -117,7 +117,7 @@ app.put('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (
 
         try {
             // Check and verify if the new user exists
-            const userResponse = await axios.get(`http://localhost:3002/users/${userId}`);
+            const userResponse = await axios.get(`http://localhost:3002/user/${userId}`);
             if (userResponse.status !== 200) {
                 return res.status(404).json({ error: 'user not found' });
             }
