@@ -21,11 +21,11 @@ apiEndpoints:
 
 serviceEndpoints:
   productService:
-    url: 'http://localhost:3001'
+    url: 'https://localhost:3001'
   userService:
-    url: 'http://localhost:3002'
+    url: 'https://localhost:3002'
   orderService:
-    url: 'http://localhost:3003'
+    url: 'https://localhost:3003'
 
 policies:
   - basic-auth
@@ -46,6 +46,7 @@ pipelines:
           - action:
               serviceEndpoint: userService
               changeOrigin: true
+              secure: false
   productsPipeline:
     apiEndpoints:
       - product
@@ -54,6 +55,7 @@ pipelines:
           - action:
               serviceEndpoint: productService
               changeOrigin: true
+              secure: false
   usersPipeline:
     apiEndpoints:
       - user
@@ -62,6 +64,7 @@ pipelines:
           - action:
               serviceEndpoint: userService
               changeOrigin: true
+              secure: false
   ordersPipeline:
     apiEndpoints:
       - orders
@@ -70,3 +73,4 @@ pipelines:
           - action:
               serviceEndpoint: orderService
               changeOrigin: true
+              secure: false

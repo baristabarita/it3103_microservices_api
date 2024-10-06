@@ -2,12 +2,22 @@
 
 const express = require('express');
 const app = express();
-const port = 3001;
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const PORT = 3001;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
 
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+const options = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+}
+
+
 app.use(express.json());
-// app.use(authenticateToken);
 
 let products = {
     1: { id: 1, name: 'Product 1', description: 'Description 1', price: 10 },
@@ -17,7 +27,7 @@ let products = {
 let productIdCounter = 4;
 
 //Adds a new product - Admins only.
-app.post('/products/addProduct', authenticateToken, roleAccessMiddleware(['admin']), async (req, res) =>{
+app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), async (req, res) =>{
     const productData = req.body;
     const productId = productIdCounter++;
     //Checks if products exists in Product service
@@ -36,8 +46,8 @@ app.post('/products/addProduct', authenticateToken, roleAccessMiddleware(['admin
 });
 
 //Get product by ID - Open to all.
-app.get('/products/:productId',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
-    const productId = req.params.productId;
+app.get('/view/:productId',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+    const productId = req.params.productId; 
     const product = products[productId];
 
     //Checks if specific product exists
@@ -53,7 +63,7 @@ app.get('/products/:productId',  authenticateToken, roleAccessMiddleware(['custo
 });
 
 //Get and view all available products - Open to all.
-app.get('/products/allProduct/view', authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+app.get('/allProducts', authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
     try {
         // Log to debug products
         console.log('All Products:', products);
@@ -82,7 +92,7 @@ app.get('/products/allProduct/view', authenticateToken, roleAccessMiddleware(['c
 
 //Updates an existing product - Admin only.
 
-app.put('/products/:productId',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+app.put('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
     const productId = req.params.productId;
     const product = products[productId];
     //Checks if the selected product exists
@@ -102,7 +112,7 @@ app.put('/products/:productId',  authenticateToken, roleAccessMiddleware(['admin
 
 //Deletes a product - Admin only.
 
-app.delete('/products/:productId',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+app.delete('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
     const productId = req.params.productId;
 
     // Check if the product exists and delete it
@@ -118,6 +128,11 @@ app.delete('/products/:productId',  authenticateToken, roleAccessMiddleware(['ad
     }
 });
 
-app.listen(port, () => 
-    console.log(`Product Service running on http://localhost:${port}`)
-);
+// app.listen(port, () => 
+//     console.log(`Product Service running on http://localhost:${port}`)
+// );
+
+//Start Server HTTPS
+https.createServer(options, app).listen(PORT, () => {
+    console.log(`Product service running on port ${PORT}`);
+});

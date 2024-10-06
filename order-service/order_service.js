@@ -1,11 +1,21 @@
 //Order Service index file
 
 const express = require('express');
-const axios = require('axios');
 const app = express();
-const port = 3003;
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const PORT = 3003;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware')
+
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+const options = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+}
 
 app.use(express.json());
 // app.use(authenticateToken);
@@ -13,15 +23,20 @@ app.use(express.json());
 let orders = {};
 let orderIdCounter = 1;
 
+const axiosInstance = axios.create({
+    httpsAgent: new https.Agent({
+        rejectUnauthorized: false // Accept self-signed certificates
+    })
+});
+
 // Create a new order - Customer only
-// Create a new order - Customer only
-app.post('/orders/addOrder', authenticateToken, roleAccessMiddleware(['customer']), async (req, res) => {
+app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), async (req, res) => {
     const { userId, productId } = req.body;
     console.log(req.body);
 
     try {
         // Checks and verifies if the user exists
-        const userResponse = await axios.get(`http://localhost:8080/users/${userId}`, {
+        const userResponse = await axiosInstance.get(`https://localhost:3000/users/${userId}`, {
             headers: {
                 Authorization: req.headers['authorization'],  // Pass the original token
             }
@@ -33,7 +48,7 @@ app.post('/orders/addOrder', authenticateToken, roleAccessMiddleware(['customer'
         console.log(userResponse);
 
         // Checks and verifies if the product exists
-        const productResponse = await axios.get(`http://localhost:8080/products/${productId}`, {
+        const productResponse = await axiosInstance.get(`https://localhost:3000/products/view/${productId}`, {
             headers: {
                 Authorization: req.headers['authorization'],  // Pass the original token
             }
@@ -67,7 +82,7 @@ app.post('/orders/addOrder', authenticateToken, roleAccessMiddleware(['customer'
 });
 
 // Get Order Details by ID - Admin only
-app.get('/orders/:orderId', async (req, res) => {
+app.get('/:orderId', async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     try {
         if (!orders[orderId]) {
@@ -89,7 +104,7 @@ app.get('/orders/:orderId', async (req, res) => {
 });
 
 // Get ALL Orders - Admin only.
-app.get('/orders/all', async (req, res) =>{
+app.get('/allOrders/view', async (req, res) =>{
     const allOrders = Object.values(orders);
 
     try{
@@ -117,7 +132,7 @@ app.get('/orders/all', async (req, res) =>{
 });
 
 // Update Order Details -  Open to all.
-app.put('/orders/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
     const orderId = parseInt(req.params.orderId);
 
     try {
@@ -128,7 +143,7 @@ app.put('/orders/:orderId', authenticateToken, roleAccessMiddleware(['customer',
         const { userId, productId } = req.body;
 
         // Check and verify if the new user exists
-        const userResponse = await axios.get(`http://localhost:8080/users/${userId}`, {
+        const userResponse = await axiosInstance.get(`https://localhost:3000/users/${userId}`, {
             headers: {
                 Authorization: req.headers['authorization'], // Pass the original token
             }
@@ -139,7 +154,7 @@ app.put('/orders/:orderId', authenticateToken, roleAccessMiddleware(['customer',
         const userDetails = userResponse.data;
 
         // Check and verify if the new product exists
-        const productResponse = await axios.get(`http://localhost:8080/products/${productId}`, {
+        const productResponse = await axiosInstance.get(`https://localhost:3000/products/view/${productId}`, {
             headers: {
                 Authorization: req.headers['authorization'], // Pass the original token
             }
@@ -170,7 +185,7 @@ app.put('/orders/:orderId', authenticateToken, roleAccessMiddleware(['customer',
 });
 
 //Delete an Order - Open to all.
-app.delete('/orders/:orderId', async (req, res) => {
+app.delete('/:orderId', async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     
     try {
@@ -185,8 +200,12 @@ app.delete('/orders/:orderId', async (req, res) => {
     }
 });
 
-app.listen(port, () => 
-    console.log(`Order Service running on Port http://localhost:${port}`)
-);
+// app.listen(port, () => 
+//     console.log(`Order Service running on Port http://localhost:${port}`)
+// );
 
 
+//Start Server HTTPS
+https.createServer(options, app).listen(PORT, () => {
+    console.log(`Order service running on port ${PORT}`);
+});

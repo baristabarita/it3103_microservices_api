@@ -2,14 +2,27 @@
 
 const express = require('express');
 const app = express();
+const https = require('https');
+const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const path = require('path');
-const port = 3002;
+const PORT = 3002;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+const options = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+}
+
+// // HTTPS options
+// const options = {
+//     key: fs.readFileSync(path.resolve(__dirname, '../ssl/server.key')),
+//     cert: fs.readFileSync(path.resolve(__dirname, '../ssl/server.cert'))
+// };
 
 app.use(express.json());
 
@@ -29,7 +42,7 @@ function generateToken(user) {
 }
 
 // Registers a new user
-app.post('/users/register', async (req, res) => {
+app.post('/register', async (req, res) => {
     const { name, email, role, pass } = req.body;
     const hashedPassword = await bcrypt.hash(pass, 10);
     const newUser = {
@@ -52,7 +65,7 @@ app.post('/users/register', async (req, res) => {
 });
 
 // Login for User
-app.post('/users/login', async (req, res) => {
+app.post('/login', async (req, res) => {
     const { email, pass } = req.body;
     const incomingUser = users.find(u => u.email === email); 
 
@@ -70,7 +83,7 @@ app.post('/users/login', async (req, res) => {
 });
 
 //Add New user - Admin only
-app.post('/users/addUser',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+app.post('/addUser',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
     const newuser = req.body;
     newuser.id = userIdCounter++;
     
@@ -84,7 +97,7 @@ app.post('/users/addUser',  authenticateToken, roleAccessMiddleware(['admin']), 
 });
 
 //Get specific user Detail - open to all
-app.get('/users/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), (req, res) => {
+app.get('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
     
@@ -100,8 +113,8 @@ app.get('/users/:userID',  authenticateToken, roleAccessMiddleware(['customer', 
 
 });
  
-//Update user Information - Customer only
-app.put('/users/:userID',  authenticateToken, roleAccessMiddleware(['customer']), (req, res) => {
+//Update user Information - All users
+app.put('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
 
@@ -122,7 +135,7 @@ app.put('/users/:userID',  authenticateToken, roleAccessMiddleware(['customer'])
 });
  
 //Delete user Information - admin only
-app.delete('/users/:userID',  authenticateToken, roleAccessMiddleware(['admin']), (req, res) => {
+app.delete('/:userID',  authenticateToken, roleAccessMiddleware(['admin']), (req, res) => {
     const userID = parseInt(req.params.userID, 10);
     const ndex = users.findIndex((user) => user.id === userID);
 
@@ -142,24 +155,13 @@ app.delete('/users/:userID',  authenticateToken, roleAccessMiddleware(['admin'])
 
 });
  
-//Start Server
-app.listen(port, () => {
-    console.log(`User Service now listening at http://localhost:${port}`);
-});
-
-// const options = {
-//     key: fs.readFileSync(process.env.SSL_KEY_PATH),
-//     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-// }
-
-// // HTTPS options
-// const options = {
-//     key: fs.readFileSync(path.resolve(__dirname, '../ssl/server.key')),
-//     cert: fs.readFileSync(path.resolve(__dirname, '../ssl/server.cert'))
-// };
-  
-
-// //Start Server HTTPS
-// https.createServer(options, app).listen(port, () => {
-//     console.log(`User service running on port ${port}`);
+// //Start Server
+// app.listen(port, () => {
+//     console.log(`User Service now listening at http://localhost:${port}`);
 // });
+
+
+//Start Server HTTPS
+https.createServer(options, app).listen(PORT, () => {
+    console.log(`User service running on port ${PORT}`);
+});
