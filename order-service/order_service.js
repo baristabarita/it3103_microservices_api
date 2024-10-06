@@ -1,34 +1,60 @@
 //Order Service index file
 
 const express = require('express');
-const axios = require('axios');
 const app = express();
-const port = 3003;
-const authenticateToken = require('./middlewares/authMiddleware');
-const roleAccessMiddleware = require('./middlewares/roleAccessMiddleware')
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const PORT = 3003;
+const authenticateToken = require('../middlewares/authMiddleware');
+const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware')
+const { inputValidation, ordersValidationRules, editOrdersValidationRules } = require('../middlewares/sanitizeMiddleware');
+const rateLimitMiddleware = require('../middlewares/rateLimiterMiddleware');
+
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+const options = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+}
 
 app.use(express.json());
-app.use(authenticateToken);
+// app.use(authenticateToken);
 
 let orders = {};
 let orderIdCounter = 1;
 
+const axiosInstance = axios.create({
+    httpsAgent: new https.Agent({
+        rejectUnauthorized: false // Accept self-signed certificates
+    })
+});
+
 // Create a new order - Customer only
-app.post('/orders', roleAccessMiddleware(['customer']), async (req, res) => {
+app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), inputValidation(ordersValidationRules), rateLimitMiddleware, async (req, res) => {
     const { userId, productId } = req.body;
     console.log(req.body);
 
     try {
         // Checks and verifies if the user exists
-        const userResponse = await axios.get(`http://localhost:3002/user/${userId}`);
+        const userResponse = await axiosInstance.get(`https://localhost:3000/users/${userId}`, {
+            headers: {
+                Authorization: req.headers['authorization'],  // Pass the original token
+            }
+        });
         if (userResponse.status !== 200) {
-            return res.status(404).json({ error: 'user not found' });
+            return res.status(404).json({ error: 'User not found' });
         }
         const userDetails = userResponse.data;
         console.log(userResponse);
 
         // Checks and verifies if the product exists
-        const productResponse = await axios.get(`http://localhost:3001/products/${productId}`);
+        const productResponse = await axiosInstance.get(`https://localhost:3000/products/view/${productId}`, {
+            headers: {
+                Authorization: req.headers['authorization'],  // Pass the original token
+            }
+        });
         if (productResponse.status !== 200) {
             return res.status(404).json({ error: 'Product not found' });
         }
@@ -41,22 +67,24 @@ app.post('/orders', roleAccessMiddleware(['customer']), async (req, res) => {
 
         // Stores the created order
         orders[orderId] = order;
-        res.status(201).json({
+
+        return res.status(201).json({
             message: 'Order created successfully',
             orderId: orderId,
             order: orders[orderId]
         });
 
     } catch (error) {
-        if (error.response || error.response.status === 404) {
-            return res.status(404).json({ error: 'user or Product service error' });
+        console.error('Error creating order:', error);
+        if (error.response && error.response.status === 404) {
+            return res.status(404).json({ error: 'User or Product service error' });
         }
-        res.status(500).json({ error: 'Error creating order' });
+        return res.status(500).json({ error: 'Error creating order' });
     }
 });
 
 // Get Order Details by ID - Admin only
-app.get('/orders/:orderId', roleAccessMiddleware(['admin']), async (req, res) => {
+app.get('/:orderId', authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     try {
         if (!orders[orderId]) {
@@ -78,7 +106,7 @@ app.get('/orders/:orderId', roleAccessMiddleware(['admin']), async (req, res) =>
 });
 
 // Get ALL Orders - Admin only.
-app.get('/orders/all', roleAccessMiddleware(['admin']), async (req, res) =>{
+app.get('/allOrders/view', authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) =>{
     const allOrders = Object.values(orders);
 
     try{
@@ -106,8 +134,9 @@ app.get('/orders/all', roleAccessMiddleware(['admin']), async (req, res) =>{
 });
 
 // Update Order Details -  Open to all.
-app.put('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), inputValidation(editOrdersValidationRules), rateLimitMiddleware, async (req, res) => {
     const orderId = parseInt(req.params.orderId);
+
     try {
         if (!orders[orderId]) {
             return res.status(404).json({ error: `Order not found with ID ${orderId}` });
@@ -115,45 +144,50 @@ app.put('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (
 
         const { userId, productId } = req.body;
 
-        try {
-            // Check and verify if the new user exists
-            const userResponse = await axios.get(`http://localhost:3002/user/${userId}`);
-            if (userResponse.status !== 200) {
-                return res.status(404).json({ error: 'user not found' });
+        // Check and verify if the new user exists
+        const userResponse = await axiosInstance.get(`https://localhost:3000/users/${userId}`, {
+            headers: {
+                Authorization: req.headers['authorization'], // Pass the original token
             }
-            const userDetails = userResponse.data;
-
-            // Check and verify if the new product exists
-            const productResponse = await axios.get(`http://localhost:3001/products/${productId}`);
-            if (productResponse.status !== 200) {
-                return res.status(404).json({ error: 'Product not found' });
-            }
-            const productDetails = productResponse.data;
-
-            // Update order details
-            orders[orderId].userId = userId;
-            orders[orderId].productId = productId;
-            orders[orderId].userDetails = userDetails;
-            orders[orderId].productDetails = productDetails;
-
-            res.json({
-                message: `Order updated with ID ${orderId}`,
-                order: orders[orderId]
-            });
-
-        } catch (error) {
-            if (error.response && error.response.status === 404) {
-                return res.status(404).json({ error: 'user or Product service error' });
-            }
-            res.status(500).json({ error: 'Error updating order' });
+        });
+        if (userResponse.status !== 200) {
+            return res.status(404).json({ error: 'User not found' });
         }
+        const userDetails = userResponse.data;
+
+        // Check and verify if the new product exists
+        const productResponse = await axiosInstance.get(`https://localhost:3000/products/view/${productId}`, {
+            headers: {
+                Authorization: req.headers['authorization'], // Pass the original token
+            }
+        });
+        if (productResponse.status !== 200) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        const productDetails = productResponse.data;
+
+        // Update order details
+        orders[orderId].userId = userId;
+        orders[orderId].productId = productId;
+        orders[orderId].userDetails = userDetails;
+        orders[orderId].productDetails = productDetails;
+
+        return res.json({
+            message: `Order updated with ID ${orderId}`,
+            order: orders[orderId]
+        });
+
     } catch (error) {
-        res.status(500).json({ error: 'Error updating order' });
+        console.error('Error updating order:', error);
+        if (error.response && error.response.status === 404) {
+            return res.status(404).json({ error: 'User or Product service error' });
+        }
+        return res.status(500).json({ error: 'Error updating order' });
     }
 });
 
-//Delete an Order - Open to all.
-app.delete('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+//Delete an Order - Admin only.
+app.delete('/:orderId', authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     
     try {
@@ -168,8 +202,12 @@ app.delete('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), asyn
     }
 });
 
-app.listen(port, () => 
-    console.log(`Order Service running on Port http://localhost:${port}`)
-);
+// app.listen(port, () => 
+//     console.log(`Order Service running on Port http://localhost:${port}`)
+// );
 
 
+//Start Server HTTPS
+https.createServer(options, app).listen(PORT, () => {
+    console.log(`Order service running on port ${PORT}`);
+});
