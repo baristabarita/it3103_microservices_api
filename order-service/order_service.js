@@ -20,7 +20,7 @@ app.post('/orders', roleAccessMiddleware(['customer']), async (req, res) => {
 
     try {
         // Checks and verifies if the user exists
-        const userResponse = await axios.get(`http://localhost:3002/users/${userId}`);
+        const userResponse = await axios.get(`http://localhost:3002/user/${userId}`);
         if (userResponse.status !== 200) {
             return res.status(404).json({ error: 'user not found' });
         }
@@ -117,7 +117,7 @@ app.put('/orders/:orderId', roleAccessMiddleware(['customer', 'admin']), async (
 
         try {
             // Check and verify if the new user exists
-            const userResponse = await axios.get(`http://localhost:3002/users/${userId}`);
+            const userResponse = await axios.get(`http://localhost:3002/user/${userId}`);
             if (userResponse.status !== 200) {
                 return res.status(404).json({ error: 'user not found' });
             }
