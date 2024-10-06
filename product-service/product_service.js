@@ -9,6 +9,7 @@ const PORT = 3001;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
 const { inputValidation, productInputValidationRules } = require('../middlewares/sanitizeMiddleware');
+const rateLimitMiddleware = require('../middlewares/rateLimiterMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -28,7 +29,7 @@ let products = {
 let productIdCounter = 4;
 
 //Adds a new product - Admins only.
-app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), inputValidation(productInputValidationRules), async (req, res) =>{
+app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), inputValidation(productInputValidationRules), rateLimitMiddleware, async (req, res) =>{
     const productData = req.body;
     const productId = productIdCounter++;
     //Checks if products exists in Product service
@@ -47,7 +48,7 @@ app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), inpu
 });
 
 //Get product by ID - Open to all.
-app.get('/view/:productId',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+app.get('/view/:productId',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), rateLimitMiddleware, async (req, res) => {
     const productId = req.params.productId; 
     const product = products[productId];
 
@@ -64,7 +65,7 @@ app.get('/view/:productId',  authenticateToken, roleAccessMiddleware(['customer'
 });
 
 //Get and view all available products - Open to all.
-app.get('/allProducts', authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+app.get('/allProducts', authenticateToken, roleAccessMiddleware(['customer', 'admin']), rateLimitMiddleware, async (req, res) => {
     try {
         // Log to debug products
         console.log('All Products:', products);
@@ -93,7 +94,7 @@ app.get('/allProducts', authenticateToken, roleAccessMiddleware(['customer', 'ad
 
 //Updates an existing product - Admin only.
 
-app.put('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+app.put('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const productId = req.params.productId;
     const product = products[productId];
     //Checks if the selected product exists
@@ -113,7 +114,7 @@ app.put('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), asyn
 
 //Deletes a product - Admin only.
 
-app.delete('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+app.delete('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const productId = req.params.productId;
 
     // Check if the product exists and delete it

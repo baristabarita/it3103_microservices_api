@@ -10,6 +10,7 @@ const PORT = 3003;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware')
 const { inputValidation, ordersValidationRules, editOrdersValidationRules } = require('../middlewares/sanitizeMiddleware');
+const rateLimitMiddleware = require('../middlewares/rateLimiterMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -31,7 +32,7 @@ const axiosInstance = axios.create({
 });
 
 // Create a new order - Customer only
-app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), inputValidation(ordersValidationRules), async (req, res) => {
+app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), inputValidation(ordersValidationRules), rateLimitMiddleware, async (req, res) => {
     const { userId, productId } = req.body;
     console.log(req.body);
 
@@ -83,7 +84,7 @@ app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), inp
 });
 
 // Get Order Details by ID - Admin only
-app.get('/:orderId', async (req, res) => {
+app.get('/:orderId', authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     try {
         if (!orders[orderId]) {
@@ -105,7 +106,7 @@ app.get('/:orderId', async (req, res) => {
 });
 
 // Get ALL Orders - Admin only.
-app.get('/allOrders/view', async (req, res) =>{
+app.get('/allOrders/view', authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) =>{
     const allOrders = Object.values(orders);
 
     try{
@@ -133,7 +134,7 @@ app.get('/allOrders/view', async (req, res) =>{
 });
 
 // Update Order Details -  Open to all.
-app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), inputValidation(editOrdersValidationRules), async (req, res) => {
+app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), inputValidation(editOrdersValidationRules), rateLimitMiddleware, async (req, res) => {
     const orderId = parseInt(req.params.orderId);
 
     try {
@@ -185,8 +186,8 @@ app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin
     }
 });
 
-//Delete an Order - Open to all.
-app.delete('/:orderId', async (req, res) => {
+//Delete an Order - Admin only.
+app.delete('/:orderId', authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const orderId = parseInt(req.params.orderId);
     
     try {

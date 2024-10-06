@@ -11,6 +11,7 @@ const PORT = 3002;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
 const { inputValidation, regValidationRules, logValidationRules } = require('../middlewares/sanitizeMiddleware');
+const rateLimitMiddleware = require('../middlewares/rateLimiterMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -43,7 +44,7 @@ function generateToken(user) {
 }
 
 // Registers a new user
-app.post('/register', inputValidation(regValidationRules), async (req, res) => {
+app.post('/register', inputValidation(regValidationRules), rateLimitMiddleware, async (req, res) => {
     const { name, email, role, pass } = req.body;
     const hashedPassword = await bcrypt.hash(pass, 10);
     const newUser = {
@@ -66,7 +67,7 @@ app.post('/register', inputValidation(regValidationRules), async (req, res) => {
 });
 
 // Login for User
-app.post('/login', inputValidation(logValidationRules), async (req, res) => {
+app.post('/login', inputValidation(logValidationRules), rateLimitMiddleware, async (req, res) => {
     const { email, pass } = req.body;
     const incomingUser = users.find(u => u.email === email); 
 
@@ -84,7 +85,7 @@ app.post('/login', inputValidation(logValidationRules), async (req, res) => {
 });
 
 //Add New user - Admin only
-app.post('/addUser',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+app.post('/addUser',  authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
     const newuser = req.body;
     newuser.id = userIdCounter++;
     
@@ -98,7 +99,7 @@ app.post('/addUser',  authenticateToken, roleAccessMiddleware(['admin']), async 
 });
 
 //Get specific user Detail - open to all
-app.get('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), (req, res) => {
+app.get('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), rateLimitMiddleware, (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
     
@@ -115,7 +116,7 @@ app.get('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin
 });
  
 //Update user Information - All users
-app.put('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), (req, res) => {
+app.put('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), rateLimitMiddleware, (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
 
@@ -136,7 +137,7 @@ app.put('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin
 });
  
 //Delete user Information - admin only
-app.delete('/:userID',  authenticateToken, roleAccessMiddleware(['admin']), (req, res) => {
+app.delete('/:userID',  authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, (req, res) => {
     const userID = parseInt(req.params.userID, 10);
     const ndex = users.findIndex((user) => user.id === userID);
 
