@@ -1,25 +1,31 @@
 //authMiddleWare.js
 
 const jwt = require(`jsonwebtoken`);
-require('dotenv').config(); //Load Environment Variable
+const path = require('path');
+
+//Load Environment Variable
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const authenticateToken = (req, res, next) => {
+    //Extracts the token from Authorization header
     const authHeader = req.headers[`authorization`];
     const token = authHeader &&  authHeader.split(' ')[1];
 
     if (!token) {
-        return res.sendStatus(401);
+        //Return 401 Unauthorized or no token was provided
+        return res.sendStatus(401).json({message: 'Unauthorized: No token provided'});
     }
 
+    //Verify token using secret key
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
         if (err) {
-            return res.sendStatus(403); //Forbidden
+            // If token verification fails, send 403 forbidden status  
+            return res.sendStatus(403).json({message: 'Forbidden: Invalid or expired token'}); //Forbidden
         }
+        //If valid token, attach user object to request then proceed to next middleware
         req.user = user;
         next();
     });
 };
 
 module.exports = authenticateToken;
-
-//Just needs to test the Authentication by Importing it into the Product and Order

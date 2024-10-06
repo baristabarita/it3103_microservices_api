@@ -3,11 +3,12 @@
 const express = require('express');
 const app = express();
 const jwt = require('jsonwebtoken');
-const authenticateToken = require('../middlewares/authMiddleware');
-const https = require('https');
-const fs = require('fs');
+const bcrypt = require('bcrypt');
 const path = require('path');
 const port = 3002;
+const authenticateToken = require('../middlewares/authMiddleware');
+const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
+
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 app.use(express.json());
@@ -15,75 +16,75 @@ app.use(express.json());
 let users = [];
 let userIdCounter = 1;
 
+
 function generateToken(user) {
     const payload = {
         id: user.id,
-        user: user.name,
+        name: user.name,
         email: user.email,
-        role: user.role,
-        pass: user.pass
-    }
-    console.log(payload);
+        role: user.role
+    };
+    console.log('Generated Token Payload:', payload);
     return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
 }
 
-//Add New user, Also known as Signups
-app.post('/signup', (req, res) => {
-    console.log(req);
+// Registers a new user
+app.post('/users/register', async (req, res) => {
     const { name, email, role, pass } = req.body;
-    console.log(`Name of the user: ${name}`);
-    console.log(`Email of the user: ${email}`);
-    console.log(`Password of the user: ${pass}`);
-    
+    const hashedPassword = await bcrypt.hash(pass, 10);
     const newUser = {
         id: userIdCounter++,
         name,
         email,
         role,
-        pass
+        pass: hashedPassword
     };
-    
+
     try {
         users.push(newUser);
+        console.log('New User Registered:', newUser);
         const token = generateToken(newUser);
         res.status(201).json({ user: newUser, token });
     } catch (error) {
-        res.status(500).json({error: "Error adding new user"});
-        console.log(error);
+        console.error('Error Adding New User:', error);
+        res.status(500).json({ error: "Error adding new user" });
     }
-    
-    // console.log(users);
-    
 });
 
-//Login User
-app.post('/login', (req, res) => {
-    
+// Login for User
+app.post('/users/login', async (req, res) => {
     const { email, pass } = req.body;
-    const incomingUser = users.find(u => u.email === email && u.pass === pass); //find the user information
-    
-    // console.log(incomingUser);
-    
+    const incomingUser = users.find(u => u.email === email); 
+
     try {
-        if (incomingUser) {
+        if (incomingUser && await bcrypt.compare(pass, incomingUser.pass)) {
             const token = generateToken(incomingUser);
             res.json({ token });
         } else {
-            res.status(401).json({
-                error: 'Invalid credentials'
-            });
+            res.status(401).json({ error: 'Invalid credentials' });
         }
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({error: "There was a problem during login!"});
     }
-    
-    
 });
 
-app.use(authenticateToken);
+//Add New user - Admin only
+app.post('/users/addUser',  authenticateToken, roleAccessMiddleware(['admin']), async (req, res) => {
+    const newuser = req.body;
+    newuser.id = userIdCounter++;
+    
+    try {
+        users.push(newuser);
+        res.status(201).json(newuser);
+    } catch (error) {
+        res.status(500).json({error: "Error adding new customer"});
+    }
+    console.log(users);
+});
 
-//Get user Detail
-app.get('/user/:userID', (req, res) => {
+//Get specific user Detail - open to all
+app.get('/users/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
     
@@ -99,8 +100,8 @@ app.get('/user/:userID', (req, res) => {
 
 });
  
-//Update user Information
-app.put('/user/:userID', (req, res) => {
+//Update user Information - Customer only
+app.put('/users/:userID',  authenticateToken, roleAccessMiddleware(['customer']), (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
 
@@ -120,8 +121,8 @@ app.put('/user/:userID', (req, res) => {
 
 });
  
-//Delete user Information
-app.delete('/user/:userID', (req, res) => {
+//Delete user Information - admin only
+app.delete('/users/:userID',  authenticateToken, roleAccessMiddleware(['admin']), (req, res) => {
     const userID = parseInt(req.params.userID, 10);
     const ndex = users.findIndex((user) => user.id === userID);
 
@@ -142,16 +143,23 @@ app.delete('/user/:userID', (req, res) => {
 });
  
 //Start Server
-// app.listen(port, () => {
-//     console.log(`User Service now listening at http://localhost:${port}`);
+app.listen(port, () => {
+    console.log(`User Service now listening at http://localhost:${port}`);
+});
+
+// const options = {
+//     key: fs.readFileSync(process.env.SSL_KEY_PATH),
+//     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+// }
+
+// // HTTPS options
+// const options = {
+//     key: fs.readFileSync(path.resolve(__dirname, '../ssl/server.key')),
+//     cert: fs.readFileSync(path.resolve(__dirname, '../ssl/server.cert'))
+// };
+  
+
+// //Start Server HTTPS
+// https.createServer(options, app).listen(port, () => {
+//     console.log(`User service running on port ${port}`);
 // });
-
-const options = {
-    key: fs.readFileSync(process.env.SSL_KEY_PATH),
-    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-}
-
-//Start Server HTTPS
-https.createServer(options, app).listen(port, () => {
-    console.log(`User service running on port ${port}`);
-  });
