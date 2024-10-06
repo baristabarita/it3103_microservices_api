@@ -1,30 +1,31 @@
 http:
   port: 8080
 
+https:
+  port: 8443
+
 admin:
   port: 9876
   host: localhost
 
 apiEndpoints:
-  api:
-    host: '*'
-    
   product:
     host: localhost
     paths: '/product/*'
   user:
-    host: '*'
+    host: localhost
     paths: '/user/*'
+  orders:
+    host: localhost
+    paths: '/orders/*'
 
 serviceEndpoints:
-  httpbin:
-    url: 'https://httpbin.org'
   product:
-    url: 'http://localhost:3001'
+    url: 'https://localhost:3001'
   user:
-    url: 'http://localhost:3002'
+    url: 'https://localhost:3002'
   order:
-    url: 'http://localhost:3003'
+    url: 'https://localhost:3003'
 
 policies:
   - basic-auth
@@ -37,7 +38,7 @@ policies:
   - rate-limit
 
 pipelines:
-  default:
+  defaultPipeline:
     apiEndpoints:
       - user
     policies:
@@ -63,7 +64,7 @@ pipelines:
               changeOrigin: true
   ordersPipeline:
     apiEndpoints:
-      - order
+      - orders
     policies:
       - proxy:
           - action:
