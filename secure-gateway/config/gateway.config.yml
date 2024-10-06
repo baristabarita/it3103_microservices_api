@@ -1,14 +1,22 @@
 http:
   port: 8080
 
-https:
-  port: 8443
+# https:
+#   port: 443
+#   tls:
+#     key:
+#       file: '../ssl/server.key'   # Ensure path is correct
+#     cert:
+#       file: '../ssl/server.cert'
 
 admin:
   port: 9876
   host: localhost
 
 apiEndpoints:
+  api:
+    host: localhost
+    paths: '/ip'
   product:
     host: localhost
     paths: '/product/*'
@@ -20,6 +28,8 @@ apiEndpoints:
     paths: '/orders/*'
 
 serviceEndpoints:
+  httpbin:
+    url: 'https://httpbin.org'
   product:
     url: 'https://localhost:3001'
   user:
