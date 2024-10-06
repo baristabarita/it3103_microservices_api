@@ -7,23 +7,23 @@ admin:
 
 apiEndpoints:
   api:
-    host: localhost
-    paths: '/ip'
-  products:
+    host: '*'
+    
+  product:
     host: localhost
     paths: '/product/*'
-  users:
-    host: localhost
+  user:
+    host: '*'
     paths: '/user/*'
 
 serviceEndpoints:
   httpbin:
     url: 'https://httpbin.org'
-  productService:
+  product:
     url: 'http://localhost:3001'
-  userService:
+  user:
     url: 'http://localhost:3002'
-  orderService:
+  order:
     url: 'http://localhost:3003'
 
 policies:
@@ -39,33 +39,33 @@ policies:
 pipelines:
   default:
     apiEndpoints:
-      - api
+      - user
     policies:
       - proxy:
           - action:
-              serviceEndpoint: httpbin
+              serviceEndpoint: user
               changeOrigin: true
   productsPipeline:
     apiEndpoints:
-      - products
+      - product
     policies:
       - proxy:
           - action:
-              serviceEndpoint: productService
+              serviceEndpoint: product
               changeOrigin: true
   usersPipeline:
     apiEndpoints:
-      - users
+      - user
     policies:
       - proxy:
           - action:
-              serviceEndpoint: userService
+              serviceEndpoint: user
               changeOrigin: true
   ordersPipeline:
     apiEndpoints:
-      - orders
+      - order
     policies:
       - proxy:
           - action:
-              serviceEndpoint: orderService
+              serviceEndpoint: order
               changeOrigin: true
