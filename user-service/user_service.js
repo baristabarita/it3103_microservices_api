@@ -10,6 +10,7 @@ const path = require('path');
 const PORT = 3002;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
+const { inputValidation, regValidationRules, logValidationRules } = require('../middlewares/sanitizeMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -42,7 +43,7 @@ function generateToken(user) {
 }
 
 // Registers a new user
-app.post('/register', async (req, res) => {
+app.post('/register', inputValidation(regValidationRules), async (req, res) => {
     const { name, email, role, pass } = req.body;
     const hashedPassword = await bcrypt.hash(pass, 10);
     const newUser = {
@@ -65,7 +66,7 @@ app.post('/register', async (req, res) => {
 });
 
 // Login for User
-app.post('/login', async (req, res) => {
+app.post('/login', inputValidation(logValidationRules), async (req, res) => {
     const { email, pass } = req.body;
     const incomingUser = users.find(u => u.email === email); 
 

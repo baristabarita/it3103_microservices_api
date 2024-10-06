@@ -8,6 +8,7 @@ const path = require('path');
 const PORT = 3001;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
+const { inputValidation, productInputValidationRules } = require('../middlewares/sanitizeMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -27,7 +28,7 @@ let products = {
 let productIdCounter = 4;
 
 //Adds a new product - Admins only.
-app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), async (req, res) =>{
+app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), inputValidation(productInputValidationRules), async (req, res) =>{
     const productData = req.body;
     const productId = productIdCounter++;
     //Checks if products exists in Product service

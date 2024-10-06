@@ -9,6 +9,7 @@ const axios = require('axios');
 const PORT = 3003;
 const authenticateToken = require('../middlewares/authMiddleware');
 const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware')
+const { inputValidation, ordersValidationRules, editOrdersValidationRules } = require('../middlewares/sanitizeMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -30,7 +31,7 @@ const axiosInstance = axios.create({
 });
 
 // Create a new order - Customer only
-app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), async (req, res) => {
+app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), inputValidation(ordersValidationRules), async (req, res) => {
     const { userId, productId } = req.body;
     console.log(req.body);
 
@@ -132,7 +133,7 @@ app.get('/allOrders/view', async (req, res) =>{
 });
 
 // Update Order Details -  Open to all.
-app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), async (req, res) => {
+app.put('/:orderId', authenticateToken, roleAccessMiddleware(['customer', 'admin']), inputValidation(editOrdersValidationRules), async (req, res) => {
     const orderId = parseInt(req.params.orderId);
 
     try {
