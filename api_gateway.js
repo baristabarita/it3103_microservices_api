@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const authenticateToken = require('./middlewares/authMiddleware');
 
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
@@ -35,8 +36,8 @@ const orderServiceProxy = createProxyMiddleware({
 });
 
 // Proxy middleware to forward requests to user service for testing
-app.use('/products',productServiceProxy); // All /products routes go to product service
-app.use('/orders', orderServiceProxy); // All /orders routes go to order service
+app.use('/products', authenticateToken, productServiceProxy); // All /products routes go to product service
+app.use('/orders', authenticateToken, orderServiceProxy); // All /orders routes go to order service
 app.use('/users', userServiceProxy); // All /users routes go to user service
 
 // HTTPS options
