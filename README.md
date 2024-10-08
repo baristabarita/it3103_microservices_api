@@ -53,5 +53,42 @@ node customer_service
 ```
 node order_service
 ```
+
 # Testing
 Test user inputs can be found in the ```test_input.json``` file. Postman is used for testing the API functionalities. 
+
+1. Make a user registration test. Here is an example:
+```
+{
+   "name": "John Doe",
+   "email": "john.doe@example.com",
+   "role": "admin",
+   "password": "password123"
+}
+```
+
+2. Login as the user. Omit the name and role, use POST method, and Login.
+3. A JWT token should appear under ```token``` value. Copy it.
+4. In Postman > Headers, add a row. It should look like this:
+
+|Key|Value|Description
+|--|--|--|
+| Authorization | Bearer <your_JWT_token> | |
+5. Go back to the Body tab, make a JSON data of the product. Send a POST request to Add Product. The product should be successfully added! Here is an example:
+```
+{
+   "name": "Downy!",
+   "description": "Very fragnant!"
+   "price": 10.00
+}
+```
+6. Repeat Step 1, but make a new user with ```"role" : "customer"``` this time.
+7. Ensure role-based access is applied by making an ```addProduct``` request. This should give you an unauthorized message or 403.
+8. When making an order request, you only need the following field (example):
+```
+{
+   "userId" : <userId>
+   "productId" : <productId>
+}
+```
+Make sure that you remember the userId and productId you wish to put in the order.
