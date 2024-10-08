@@ -53,3 +53,5 @@ node customer_service
 ```
 node order_service
 ```
+# Testing
+Test user inputs can be found in the ```test_input.json``` file. Postman is used for testing the API functionalities. 

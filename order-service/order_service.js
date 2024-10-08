@@ -20,7 +20,6 @@ const options = {
 }
 
 app.use(express.json());
-// app.use(authenticateToken);
 
 let orders = {};
 let orderIdCounter = 1;
@@ -31,7 +30,7 @@ const axiosInstance = axios.create({
     })
 });
 
-// Create a new order - Customer only
+// Create a New Order - Customer only
 app.post('/addOrder', authenticateToken, roleAccessMiddleware(['customer']), inputValidation(ordersValidationRules), rateLimitMiddleware, async (req, res) => {
     const { userId, productId } = req.body;
     console.log(req.body);
@@ -201,11 +200,6 @@ app.delete('/:orderId', authenticateToken, roleAccessMiddleware(['admin']), rate
         res.status(500).json({ error: 'Error deleting order' });
     }
 });
-
-// app.listen(port, () => 
-//     console.log(`Order Service running on Port http://localhost:${port}`)
-// );
-
 
 //Start Server HTTPS
 https.createServer(options, app).listen(PORT, () => {
