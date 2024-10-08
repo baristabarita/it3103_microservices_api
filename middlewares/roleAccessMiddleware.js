@@ -1,13 +1,15 @@
 //role access middleware
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'yourSecretKey';
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Load environment variables
 
 const roleAccessMiddleware = (roles) => {
 
     return(req, res, next) => {
         try{
-            
+            //Check if user exists in the request obj and if role is included
             if (!req.user || !roles.includes(req.user.role)) {
+                //Return 403 if role is not allowed
                 return res.status(403).json({ error: 'Access denied' });
             }
 
