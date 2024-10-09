@@ -55,7 +55,3 @@ https.createServer(options, app).listen(PORT, () => {
         return res.status(400).json({error: "Error occured."});
     }
 });
-
-// app.listen(PORT, () => {
-//     console.log(`API GATEWAY now listening at http://localhost:${PORT}`);
-// });

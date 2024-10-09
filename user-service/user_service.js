@@ -1,4 +1,4 @@
-//user Service index file
+//User Service index file
 
 const express = require('express');
 const app = express();
@@ -13,21 +13,19 @@ const roleAccessMiddleware = require('../middlewares/roleAccessMiddleware');
 const { inputValidation, regValidationRules, logValidationRules } = require('../middlewares/sanitizeMiddleware');
 const rateLimitMiddleware = require('../middlewares/rateLimiterMiddleware');
 
+//Load Environment Variables
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+//HTTPS options to read the directories of the SSL Keys and Certs
 const options = {
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
 }
 
-// // HTTPS options
-// const options = {
-//     key: fs.readFileSync(path.resolve(__dirname, '../ssl/server.key')),
-//     cert: fs.readFileSync(path.resolve(__dirname, '../ssl/server.cert'))
-// };
-
+//Express Middleware to Convert Requests into JSON
 app.use(express.json());
 
+//Users Array
 let users = [];
 let userIdCounter = 1;
 
@@ -43,7 +41,7 @@ function generateToken(user) {
     return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
 }
 
-// Registers a new user
+// User Register
 app.post('/register', inputValidation(regValidationRules), rateLimitMiddleware, async (req, res) => {
     const { name, email, role, pass } = req.body;
     const hashedPassword = await bcrypt.hash(pass, 10);
@@ -66,7 +64,7 @@ app.post('/register', inputValidation(regValidationRules), rateLimitMiddleware, 
     }
 });
 
-// Login for User
+// User Login
 app.post('/login', inputValidation(logValidationRules), rateLimitMiddleware, async (req, res) => {
     const { email, pass } = req.body;
     const incomingUser = users.find(u => u.email === email); 
@@ -98,7 +96,7 @@ app.post('/addUser',  authenticateToken, roleAccessMiddleware(['admin']), rateLi
     console.log(users);
 });
 
-//Get specific user Detail - open to all
+//Get User Detail - open to all
 app.get('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), rateLimitMiddleware, (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
@@ -115,7 +113,7 @@ app.get('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin
 
 });
  
-//Update user Information - All users
+//Update User Information - All users
 app.put('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin']), rateLimitMiddleware, (req, res) => {
     const userID = parseInt(req.params.userID);
     const user = users.find((user) => user.id === userID);
@@ -136,7 +134,7 @@ app.put('/:userID',  authenticateToken, roleAccessMiddleware(['customer', 'admin
 
 });
  
-//Delete user Information - admin only
+//Delete User Information - admin only
 app.delete('/:userID',  authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, (req, res) => {
     const userID = parseInt(req.params.userID, 10);
     const ndex = users.findIndex((user) => user.id === userID);
@@ -156,12 +154,6 @@ app.delete('/:userID',  authenticateToken, roleAccessMiddleware(['admin']), rate
 
 
 });
- 
-// //Start Server
-// app.listen(port, () => {
-//     console.log(`User Service now listening at http://localhost:${port}`);
-// });
-
 
 //Start Server HTTPS
 https.createServer(options, app).listen(PORT, () => {
