@@ -18,7 +18,6 @@ const options = {
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
 }
 
-
 app.use(express.json());
 
 let products = {
@@ -32,6 +31,7 @@ let productIdCounter = 4;
 app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), inputValidation(productInputValidationRules), rateLimitMiddleware, async (req, res) =>{
     const productData = req.body;
     const productId = productIdCounter++;
+
     //Checks if products exists in Product service
     try{
         products[productId] = productData;
@@ -41,7 +41,7 @@ app.post('/addProduct', authenticateToken, roleAccessMiddleware(['admin']), inpu
             product: products[productId]
         });
         console.log(products);
-    }catch(error){
+    } catch (error) {
         res.status(500).json({error: 'Error adding product' });
     }
 
@@ -130,9 +130,6 @@ app.delete('/:productId',  authenticateToken, roleAccessMiddleware(['admin']), r
     }
 });
 
-// app.listen(port, () => 
-//     console.log(`Product Service running on http://localhost:${port}`)
-// );
 
 //Start Server HTTPS
 https.createServer(options, app).listen(PORT, () => {
