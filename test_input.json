@@ -1,33 +1,52 @@
 {
-    "users": {
-        "0": {
-            "name": "John",
-            "email": "john@appleseed.com"
-        },
-        "1": {
-            "name": "IShowSpeed",
-            "email": "ishowspeed@appleseed.com"
-        }
+    "customer_1": 
+    {
+    "name": "JohnDoey21",
+    "email": "john@appleseed.com",
+    "role": "customer",
+    "pass": "johnappleseed@2113"
     },
 
-    "product": {
-        "0": {
-            "name": "Product Name",
-            "price": 150,
-            "description": "Never Give Up!"
-        },
-        "1": {
-            "name": "Product Name Too",
-            "price": 200,
-            "description": "Please do it!"
-        }
+    "customer_2": 
+    {
+    "name": "MarkJohnson31",
+    "email": "mark@john.com",
+    "role": "customer",
+    "pass": "markymohnson@211"
     },
 
-    "orders": {
-        "0": {
-            "userId": 1,
-            "productId": 1
-        }
-    }
+    "admin": 
+    {
+    "name": "AlexaKim45",
+    "email": "kimmywonders@email.com",
+    "role": "admin",
+    "pass": "kimmywonderous@445"
+    },
+
+    "product_4": 
+    {
+    "name": "Xiaomi 14T Pro",
+    "email": "Capture Pro, at the Palm of your Hands!",
+    "price": 10500.00
+    },
+
+    "product_5": 
+    {
+    "name": "Nike Adios Pro",
+    "email": "Elevate the World!",
+    "price": 9500.00
+    },
+    
+    "order_1": 
+    {
+        "userId": 1,
+        "productId": 4
+    },
+    
+    "order_2": 
+    {
+        "userId": 2,
+        "productId": 4
+    }    
 
 }

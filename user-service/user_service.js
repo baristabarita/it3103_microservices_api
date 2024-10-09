@@ -84,15 +84,27 @@ app.post('/login', inputValidation(logValidationRules), rateLimitMiddleware, asy
 
 //Add New user - Admin only
 app.post('/addUser',  authenticateToken, roleAccessMiddleware(['admin']), rateLimitMiddleware, async (req, res) => {
-    const newuser = req.body;
-    newuser.id = userIdCounter++;
+    const { name, email, role, pass } = req.body;
+    const hashedPassword = await bcrypt.hash(pass, 10);
+    const newUser = {
+        id: userIdCounter++,
+        name,
+        email,
+        role,
+        pass: hashedPassword
+    };
+
     
     try {
-        users.push(newuser);
-        res.status(201).json(newuser);
+        users.push(newUser);
+        console.log('New User Registered:', newUser);
+        const token = generateToken(newUser);
+        res.status(201).json({ user: newUser, token });
     } catch (error) {
-        res.status(500).json({error: "Error adding new customer"});
+        console.error('Error Adding New User:', error);
+        res.status(500).json({ error: "Error adding new user" });
     }
+
     console.log(users);
 });
 
