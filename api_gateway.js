@@ -35,10 +35,10 @@ const orderServiceProxy = createProxyMiddleware({
     secure: false,
 });
 
-// Proxy middleware to forward requests to user service for testing
-app.use('/products', authenticateToken, productServiceProxy); // All /products routes go to product service
-app.use('/orders', authenticateToken, orderServiceProxy); // All /orders routes go to order service
-app.use('/users', userServiceProxy); // All /users routes go to user service
+// Proxy middleware to forward requests to microservices for testing
+app.use('/products', authenticateToken, productServiceProxy);
+app.use('/orders', authenticateToken, orderServiceProxy);
+app.use('/users', userServiceProxy);
 
 // HTTPS options
 const options = {
