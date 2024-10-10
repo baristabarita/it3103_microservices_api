@@ -1,4 +1,4 @@
-# IT3103: Designing and Building a Microservices API [TO BE UPDATED]
+# IT3103: Designing and Building a Microservices API 
 
   
 
@@ -11,14 +11,16 @@ Created by:
   
 
 ## API Structure Overview
-
   
+### Microservices 
 
 1. Product Service
 
--  **POST /products**: Add a new product.
+-  **POST /addProducts**: Add a new product.
 
--  **GET /products/:productId**: Get product details by ID.
+-  **GET /products/view/:productId**: Get product details by ID.
+
+-  **GET /products/allProducts**: Gets details of all existing products.
 
 -  **PUT /products/:productId**: Update a product.
 
@@ -26,48 +28,60 @@ Created by:
 
   
 
-2. Customer Service
+2. User Service
 
--  **POST /customers**: Add a new customer.
+-  **POST /users/register**: registers a new user.
 
--  **GET /customers/:customerId**: Get customer details by ID.
+-  **POST /users/login**: logins an existing user.
 
--  **PUT /customers/:customerId**: Update customer information.
+-  **POST /users/addUser**: Add a new User (admin only).
 
--  **DELETE /customers/:customerId**: Delete a customer.
+-  **GET /users/:userId**: Gets user details by ID.
+
+-  **PUT /users/:userId**: Update user information.
+
+-  **DELETE /users/:userId**: Delete a user.
 
   
 
 3. Order Service
 
--  **POST /orders**: Creates a new order. This service will:
+-  **POST /orders/addOrder**: Creates a new order. This service will:
 
-a. Verify that the customer exists by communicating with the Customer Service.
+   a. Verify that the customer exists by communicating with the Customer Service.
 
-b. Verify that the product exists by communicating with the Product Service.
+   b. Verify that the product exists by communicating with the Product Service.
 
-c. Create the order only if the customer and product are valid.
+   c. Create the order only if the customer and product are valid.
 
--  **GET /orders/:orderId**: Get order details.
+-  **GET /orders/:orderId**: Get order details by order ID.
+
+-  **GET /orders/allOrders/view**: Gets all existing order details.
 
 -  **PUT /orders/:orderId**: Update an order.
 
 -  **DELETE /orders/:orderId**: Delete an order.
 
-  
+### Middlewares
+1. `authMiddleware.js` - Contains authenticateToken functionality.
+2. `rateLimiterMiddleware.js` - Performs request rate limiting  functionality.
+1. `roleAccessMiddleware.js` - Contains Role Based Accessing Control functionality.
+1. `sanitizeMiddleware.js` - Contains sanitization and various input validation functionalities for the microservices.
+
+
 
 ## Installation and Running the API
 
 1. Clone the project in your local directory of choice. Example using the git CLI:
 
 ```
-git clone https://github.com/baristabarita/it3103_exercise3.git
+git clone https://github.com/baristabarita/it3103_microservices_api.git
 ```
 
 2. CD into the root folder
 
 ```
-cd it3103_exercise3
+cd it3103_microservices_api
 ```
 
 
@@ -77,32 +91,49 @@ cd it3103_exercise3
 npm install
 ```
 
-  
+4. Create a .env file and place these credentials:
+```
+#JWT Secret Key
+ACCESS_TOKEN_SECRET=lBr2q60PQKnzdthiesT5iQE4vWvOAp9hr3TwkTcF9D8=
 
-4. Run each API service in different terminals
+# HTTPS Configuration
+SSL_KEY_PATH=../ssl/server.key
+SSL_CERT_PATH=../ssl/server.cert
 
-```
-node product-service/product_service.js
-```
-
-```
-node customer-service/customer_service.js
+# PORTS
+GATEWAY_PORT=3000
 ```
 
+
+5. Go into the directories of each API service and run them in different terminals
+
 ```
-node order-service/order_service.js
+cd product-service
+node product_service.js
 ```
+
+```
+cd customer-service
+node customer_service.js
+```
+
+```
+cd order-service
+order_service.js
+```
+
 All services will run independently.
 To run the API gateway, simply type:
+
 ```
 node api_gateway.js
 ```
-  
+
+Take note that the API gateway runs on port 3000.
 
 # Testing
 
 Test user inputs can be found in the ```test_input.json``` file. Postman is used for testing the API functionalities.
-
   
 
 1. Make a user registration test. Here is an example:
@@ -120,7 +151,10 @@ The user information above is for a user with administrative roles.
 For customers, simply make another with a ```role``` value set to ```customer```
 
 2. Login using POST method with ```/login``` endpoint
-
+- Endpoint Example:
+```
+https://localhost:3000/users/login
+```
 3. A JWT token should appear under ```token``` value. Copy it.
 
 4. In Postman > Headers (right before the Body Tab) , add a row. It should look like this:
